@@ -61,7 +61,7 @@ Vagrant.configure('2') do |config|
   config.vm.define :manager, primary: true  do |manager|
     manager.vm.box = vm_box
     manager.vm.box_check_update = true
-	manager.vm.disk :disk, size: "100GB", primary: true
+	manager.vm.disk :disk, size: "50GB", primary: true
     manager.vm.network :private_network, ip: "192.168.56.200"
     manager.vm.network :forwarded_port, guest: 8080, host: 8080
     manager.vm.network :forwarded_port, guest: 9443, host: 9443
@@ -81,7 +81,7 @@ Vagrant.configure('2') do |config|
     config.vm.define "worker01" do |worker|
       worker.vm.box = vm_box
       worker.vm.box_check_update = true
-	  worker.vm.disk :disk, size: "50GB", primary: true
+	  worker.vm.disk :disk, size: "25GB", primary: true
       worker.vm.network :private_network, ip: "192.168.56.201"
       worker.vm.hostname = "worker01"
       worker.vm.provision "shell", inline: $worker_nfs, privileged: true
@@ -96,7 +96,7 @@ Vagrant.configure('2') do |config|
     config.vm.define "worker02" do |worker|
         worker.vm.box = vm_box
         worker.vm.box_check_update = true
-        worker.vm.disk :disk, size: "50GB", primary: true
+        worker.vm.disk :disk, size: "25GB", primary: true
         worker.vm.network :private_network, ip: "192.168.56.202"
         worker.vm.hostname = "worker02"
         worker.vm.provision "shell", inline: $worker_nfs, privileged: true
