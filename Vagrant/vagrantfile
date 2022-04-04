@@ -12,29 +12,6 @@ curl -L https://downloads.portainer.io/portainer-agent-stack.yml -o portainer-ag
 docker stack deploy -c portainer-agent-stack.yml portainer
 SCRIPT
 
-$worker_script = <<SCRIPT
-echo Swarm Join...
-docker swarm join --token $(cat /mnt/nfs/worker_token) 192.168.56.200:2377
-SCRIPT
-
-$manager_nfs = <<SCRIPT
-apt-get update
-apt-get install -y nfs-kernel-server
-mkdir /mnt/nfs
-chown nobody:nogroup /mnt/nfs
-echo "/mnt/nfs   192.168.56.201(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports 
-echo "/mnt/nfs   192.168.56.202(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports 
-systemctl restart nfs-kernel-server
-SCRIPT
-
-$worker_nfs = <<SCRIPT
-apt-get update
-apt install -y nfs-common
-mkdir /mnt/nfs
-echo "192.168.56.200:/mnt/nfs   /mnt/nfs   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-mount -a
-SCRIPT
-
 $create_bastion = <<SCRIPT
 echo "Download some images..."
 docker pull hello-world
@@ -67,9 +44,7 @@ Vagrant.configure('2') do |config|
     manager.vm.network :forwarded_port, guest: 9443, host: 9443
 	manager.vm.network :forwarded_port, guest: 9000, host: 9000
     manager.vm.hostname = "manager"
-    manager.vm.provision "shell", inline: $manager_nfs, privileged: true
     manager.vm.provision "shell", inline: $install_docker_script, privileged: true
-    manager.vm.provision "shell", inline: $manager_script, privileged: true
     manager.vm.provision "shell", inline: $create_bastion, privileged: true
     manager.vm.provider "virtualbox" do |vb|
       vb.name = "manager"
@@ -77,35 +52,5 @@ Vagrant.configure('2') do |config|
     end
   end
 
-
-    config.vm.define "worker01" do |worker|
-      worker.vm.box = vm_box
-      worker.vm.box_check_update = true
-	  worker.vm.disk :disk, size: "25GB", primary: true
-      worker.vm.network :private_network, ip: "192.168.56.201"
-      worker.vm.hostname = "worker01"
-      worker.vm.provision "shell", inline: $worker_nfs, privileged: true
-      worker.vm.provision "shell", inline: $install_docker_script, privileged: true
-      worker.vm.provision "shell", inline: $worker_script, privileged: true
-      worker.vm.provider "virtualbox" do |vb|
-        vb.name = "worker01"
-        vb.memory = "2048"
-      end
-    end
-
-    config.vm.define "worker02" do |worker|
-        worker.vm.box = vm_box
-        worker.vm.box_check_update = true
-        worker.vm.disk :disk, size: "25GB", primary: true
-        worker.vm.network :private_network, ip: "192.168.56.202"
-        worker.vm.hostname = "worker02"
-        worker.vm.provision "shell", inline: $worker_nfs, privileged: true
-        worker.vm.provision "shell", inline: $install_docker_script, privileged: true
-        worker.vm.provision "shell", inline: $worker_script, privileged: true
-        worker.vm.provider "virtualbox" do |vb|
-          vb.name = "worker02"
-          vb.memory = "2048"
-        end
-      end
 
 end
